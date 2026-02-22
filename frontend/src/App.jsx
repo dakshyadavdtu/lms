@@ -26,7 +26,7 @@ import SearchWithAi from './pages/SearchWithAi'
 import getAllReviews from './customHooks/getAllReviews'
 import ProtectedRoute, { FullPageLoader } from './components/ProtectedRoute'
 
-export const serverUrl = import.meta.env.VITE_API_URL || "http://localhost:8000"
+export const serverUrl = import.meta.env.VITE_API_URL || "https://novalearn-00ie.onrender.com"
 
 function App() {
   const { userData, authLoading } = useSelector((state) => state.user)
