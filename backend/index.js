@@ -15,7 +15,7 @@ let port = process.env.PORT
 let app = express()
 app.use(express.json())
 app.use(cookieParser())
-const frontendOrigin = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173";
+const frontendOrigin = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "https://novalearn-ejzh.onrender.com";
 app.use(cors({
     origin: frontendOrigin,
     credentials: true
@@ -40,4 +40,5 @@ app.listen(port , ()=>{
     console.log("Server Started")
     connectDb()
 })
+
 
