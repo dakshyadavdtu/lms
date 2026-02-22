@@ -1,45 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import Card from "../components/Card.jsx";
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Nav from '../components/Nav';
 import ai from '../assets/SearchAi.png'
 import { useSelector } from 'react-redux';
+
 function AllCourses() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
-  const navigate = useNavigate()
- const [category,setCategory] = useState([])
- const [filterCourses,setFilterCourses] = useState([])
-  const {courseData} = useSelector(state=>state.course)
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+  const [category, setCategory] = useState([]);
+  const [filterCourses, setFilterCourses] = useState([]);
+  const { courseData } = useSelector(state => state.course);
 
- 
-  
-  const toggleCategory = (e) =>{
-      if(category.includes(e.target.value)){
-        setCategory(prev=> prev.filter(item => item !== e.target.value))
-      }else{
-        setCategory(prev => [...prev,e.target.value])
-      }
-  }
-
-  const applyFilter = () =>{
-    let courseCopy = courseData.slice();
-
-    if(category.length > 0){
-      courseCopy = courseCopy.filter(item => category.includes(item.category))
+  const toggleCategory = (e) => {
+    if (category.includes(e.target.value)) {
+      setCategory(prev => prev.filter(item => item !== e.target.value));
+    } else {
+      setCategory(prev => [...prev, e.target.value]);
     }
-   
-    setFilterCourses(courseCopy)
+  };
 
-  }
-
-  useEffect(()=>{
-    setFilterCourses(courseData)
-  },[courseData])
-
-  useEffect(()=>{
-    applyFilter()
-  },[category])
+  // Single source: filter by URL category (when present) or by sidebar checkboxes
+  useEffect(() => {
+    let list = courseData.slice();
+    const urlCategory = categoryFromUrl?.trim();
+    if (urlCategory) {
+      const q = urlCategory.toLowerCase();
+      list = list.filter(item => (item.category || '').toLowerCase() === q);
+    } else if (category.length > 0) {
+      list = list.filter(item => category.includes(item.category));
+    }
+    setFilterCourses(list);
+  }, [courseData, categoryFromUrl, category]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -105,7 +100,7 @@ function AllCourses() {
       <main className="w-full transition-all duration-300 py-[130px] md:pl-[300px]  flex items-start justify-center md:justify-start flex-wrap gap-6 px-[10px]">
         {
         filterCourses?.map((item,index)=>(
-          <Card key={index} thumbnail={item.thumbnail} title={item.title} price={item.price} category={item.category} id={item._id} reviews={item.reviews} />
+          <Card key={index} thumbnail={item.thumbnail} title={item.title} price={item.price} category={item.category} id={item._id} reviews={item.reviews} averageRating={item.averageRating} reviewCount={item.reviewCount} />
 
         ))
       }

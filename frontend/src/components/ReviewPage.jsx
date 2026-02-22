@@ -21,7 +21,7 @@ function ReviewPage() {
      
             {
                 latestReview.map((item,index)=>(
-                    <ReviewCard key={index} rating={item.rating} image={item.user.photoUrl} text={item.comment} name={item.user.name} role={item.user.role} />
+                    <ReviewCard key={index} rating={item.rating} image={item.user?.photoUrl} text={item.comment} name={item.user?.name} role={item.user?.role} />
                 ))
             }
              

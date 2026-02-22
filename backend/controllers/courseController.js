@@ -1,6 +1,7 @@
 import uploadOnCloudinary from "../configs/cloudinary.js"
 import Course from "../models/courseModel.js"
 import Lecture from "../models/lectureModel.js"
+import Review from "../models/reviewModel.js"
 import User from "../models/userModel.js"
 
 // create Courses
@@ -24,18 +25,35 @@ export const createCourse = async (req,res) => {
     
 }
 
-export const getPublishedCourses = async (req,res) => {
+export const getPublishedCourses = async (req, res) => {
     try {
-        const courses = await Course.find({isPublished:true}).populate("lectures reviews")
-        if(!courses)
-        {
-            return res.status(404).json({message:"Course not found"})
+        const courses = await Course.find({ isPublished: true }).populate("lectures");
+        if (!courses) {
+            return res.status(404).json({ message: "Course not found" });
         }
-
-        return res.status(200).json(courses)
-        
+        const courseIds = courses.map((c) => c._id);
+        const stats = await Review.aggregate([
+            { $match: { course: { $in: courseIds } } },
+            { $group: { _id: "$course", reviewCount: { $sum: 1 }, averageRating: { $avg: "$rating" } } }
+        ]);
+        const statsMap = {};
+        stats.forEach((s) => {
+            const id = s._id?.toString();
+            if (id) {
+                statsMap[id] = {
+                    reviewCount: s.reviewCount ?? 0,
+                    averageRating: s.averageRating != null ? Number(Number(s.averageRating).toFixed(1)) : 0
+                };
+            }
+        });
+        const coursesWithStats = courses.map((c) => {
+            const id = c._id.toString();
+            const s = statsMap[id] || { reviewCount: 0, averageRating: 0 };
+            return { ...c.toObject(), reviewCount: s.reviewCount, averageRating: s.averageRating };
+        });
+        return res.status(200).json(coursesWithStats);
     } catch (error) {
-          return res.status(500).json({message:`Failed to get All courses ${error}`})
+        return res.status(500).json({ message: `Failed to get All courses ${error}` });
     }
 }
 
@@ -76,17 +94,26 @@ export const editCourse = async (req,res) => {
     }
 }
 
-export const getCourseById = async (req,res) => {
+export const getCourseById = async (req, res) => {
     try {
-        const {courseId} = req.params
-        let course = await Course.findById(courseId)
-        if(!course){
-            return res.status(404).json({message:"Course not found"})
+        const { courseId } = req.params;
+        const course = await Course.findById(courseId).populate("lectures");
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
         }
-         return res.status(200).json(course)
-        
+        const stats = await Review.aggregate([
+            { $match: { course: course._id } },
+            { $group: { _id: null, reviewCount: { $sum: 1 }, averageRating: { $avg: "$rating" } } }
+        ]);
+        const s = stats[0];
+        const reviewCount = s?.reviewCount ?? 0;
+        const averageRating = s?.averageRating != null ? Number(Number(s.averageRating).toFixed(1)) : 0;
+        const courseObj = course.toObject();
+        courseObj.reviewCount = reviewCount;
+        courseObj.averageRating = averageRating;
+        return res.status(200).json(courseObj);
     } catch (error) {
-        return res.status(500).json({message:`Failed to get course ${error}`})
+        return res.status(500).json({ message: `Failed to get course ${error}` });
     }
 }
 
@@ -149,30 +176,35 @@ export const getCourseLecture = async (req,res) => {
     }
 }
 
-export const editLecture = async (req,res) => {
+export const editLecture = async (req, res) => {
     try {
-        const {lectureId} = req.params
-        const {isPreviewFree , lectureTitle} = req.body
-        const lecture = await Lecture.findById(lectureId)
-          if(!lecture){
-            return res.status(404).json({message:"Lecture not found"})
+        const { lectureId } = req.params;
+        const { lectureTitle } = req.body;
+        const isPreviewFree = req.body.isPreviewFree === 'true' || req.body.isPreviewFree === true;
+        const lecture = await Lecture.findById(lectureId);
+        if (!lecture) {
+            return res.status(404).json({ message: "Lecture not found" });
         }
-        let videoUrl
-        if(req.file){
-            videoUrl =await uploadOnCloudinary(req.file.path)
-            lecture.videoUrl = videoUrl
+        if (req.file) {
+            let videoUrl;
+            try {
+                videoUrl = await uploadOnCloudinary(req.file.path);
+            } catch (uploadErr) {
+                return res.status(500).json({
+                    message: uploadErr?.message ?? "Video upload failed. Please try again."
+                });
+            }
+            if (videoUrl) lecture.videoUrl = videoUrl;
         }
-        if(lectureTitle){
-            lecture.lectureTitle = lectureTitle
+        if (lectureTitle != null && lectureTitle !== '') {
+            lecture.lectureTitle = lectureTitle;
         }
-        lecture.isPreviewFree = isPreviewFree
-        
-         await lecture.save()
-        return res.status(200).json(lecture)
+        lecture.isPreviewFree = isPreviewFree;
+        await lecture.save();
+        return res.status(200).json(lecture);
     } catch (error) {
-        return res.status(500).json({message:`Failed to edit Lectures ${error}`})
+        return res.status(500).json({ message: `Failed to edit lecture: ${error?.message ?? error}` });
     }
-    
 }
 
 export const removeLecture = async (req,res) => {

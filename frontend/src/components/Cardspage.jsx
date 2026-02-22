@@ -20,7 +20,7 @@ function Cardspage() {
     
             {
                 popularCourses.map((item,index)=>(
-                    <Card key={index} id={item._id} thumbnail={item.thumbnail} title={item.title} price={item.price} category={item.category} reviews={item.reviews}  />
+                    <Card key={index} id={item._id} thumbnail={item.thumbnail} title={item.title} price={item.price} category={item.category} reviews={item.reviews} averageRating={item.averageRating} reviewCount={item.reviewCount} />
                 ))
             }
              

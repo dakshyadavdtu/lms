@@ -32,10 +32,10 @@ const Footer = () => {
         <div className="lg:w-[30%] md:w-[100%]">
           <h3 className="text-white font-semibold mb-2">Explore Categories</h3>
           <ul className="space-y-1 text-sm">
-            <li className="hover:text-white">Web Development</li>
-            <li className="hover:text-white">AI/ML</li>
-            <li className="hover:text-white">Data Science</li>
-            <li className="hover:text-white">UI/UX Design</li>
+            <li className="hover:text-white cursor-pointer" onClick={() => navigate("/allcourses?category=Web%20Development")}>Web Development</li>
+            <li className="hover:text-white cursor-pointer" onClick={() => navigate("/allcourses?category=AI%2FML")}>AI/ML</li>
+            <li className="hover:text-white cursor-pointer" onClick={() => navigate("/allcourses?category=Data%20Science")}>Data Science</li>
+            <li className="hover:text-white cursor-pointer" onClick={() => navigate("/allcourses?category=UI%20UX%20Designing")}>UI/UX Design</li>
           </ul>
         </div>
 

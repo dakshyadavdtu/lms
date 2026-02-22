@@ -7,27 +7,32 @@ import { serverUrl } from '../../App';
 import { ClipLoader } from 'react-spinners';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLectureData } from '../../redux/lectureSlice';
+import { setCourseData, setSelectedCourseData } from '../../redux/courseSlice';
 
 function CreateLecture() {
   const user = useSelector(state => state.user.userData)
-    const navigate = useNavigate()
-    const {courseId} = useParams()
-    const [lectureTitle , setLectureTitle] = useState("")
-    const [loading,setLoading] = useState(false)
-    const dispatch = useDispatch()
-    const {lectureData} = useSelector(state=>state.lecture)
-    
+  const navigate = useNavigate()
+  const { courseId } = useParams()
+  const [lectureTitle, setLectureTitle] = useState("")
+  const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch()
+  const { lectureData } = useSelector(state => state.lecture)
+  const { courseData, selectedCourseData } = useSelector(state => state.course)
 
-    const createLectureHandler = async () => {
-      setLoading(true)
-      try {
-        const result = await axios.post(serverUrl + `/api/course/createlecture/${courseId}` ,{lectureTitle} , {withCredentials:true})
-        console.log(result.data)
-        dispatch(setLectureData([...lectureData,result.data.lecture]))
-        toast.success("Lecture Created")
-        setLoading(false)
-        setLectureTitle("")
-      } catch (error) {
+  const createLectureHandler = async () => {
+    setLoading(true)
+    try {
+      const result = await axios.post(serverUrl + `/api/course/createlecture/${courseId}`, { lectureTitle }, { withCredentials: true })
+      const { lecture, course } = result.data
+      dispatch(setLectureData([...lectureData, lecture]))
+      if (course) {
+        dispatch(setCourseData(courseData.map(c => c._id === courseId ? course : c)))
+        if (selectedCourseData?._id === courseId) dispatch(setSelectedCourseData(course))
+      }
+      toast.success("Lecture Created")
+      setLoading(false)
+      setLectureTitle("")
+    } catch (error) {
         console.log(error)
         toast.error(error.response.data.message)
         setLoading(false)

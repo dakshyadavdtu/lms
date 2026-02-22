@@ -14,8 +14,6 @@ import { ClipLoader } from 'react-spinners'
 import { useDispatch } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
 
-const DEBUG_LOG_ENDPOINT = 'http://127.0.0.1:7243/ingest/0af5a546-cdc8-4764-a797-7707372f27a3';
-
 function Login() {
     const [email,setEmail]= useState("")
     const [password,setPassword]= useState("")
@@ -27,14 +25,16 @@ function Login() {
         setLoading(true)
         try {
             const result = await axios.post(serverUrl + "/api/auth/login" , {email , password} ,{withCredentials:true})
-            dispatch(setUserData(result.data))
-            navigate("/")
+            const user = result.data?.user ?? result.data
+            dispatch(setUserData(user))
             setLoading(false)
+            toast.dismiss()
             toast.success("Login Successfully")
+            navigate("/")
         } catch (error) {
             console.log(error)
             setLoading(false)
-            toast.error(error.response.data.message)
+            toast.error(error?.response?.data?.message ?? "Login failed")
         }
         
     }
@@ -47,70 +47,18 @@ function Login() {
                 const email = user.email
                 const role = ""
 
-                // #region agent log
-                fetch(DEBUG_LOG_ENDPOINT,{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        sessionId:'debug-session',
-                        runId:'google-login',
-                        hypothesisId:'firebase-success',
-                        location:'Login.jsx:googleLogin:afterSignIn',
-                        message:'Google signInWithPopup success',
-                        data:{uid:user?.uid,email:user?.email},
-                        timestamp:Date.now()
-                    })
-                }).catch(()=>{});
-                // #endregion
-                
                 const result = await axios.post(
                     serverUrl + "/api/auth/googlesignup",
                     {name , email , role},
                     {withCredentials:true}
                 )
 
-                // #region agent log
-                fetch(DEBUG_LOG_ENDPOINT,{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        sessionId:'debug-session',
-                        runId:'google-login',
-                        hypothesisId:'backend-success',
-                        location:'Login.jsx:googleLogin:afterAxios',
-                        message:'Backend googlesignup success',
-                        data:{status:result?.status, hasData:!!result?.data},
-                        timestamp:Date.now()
-                    })
-                }).catch(()=>{});
-                // #endregion
-
-                dispatch(setUserData(result.data))
-                navigate("/")
+                const backendUser = result.data?.user ?? result.data
+                dispatch(setUserData(backendUser))
+                toast.dismiss()
                 toast.success("Login Successfully")
+                navigate("/")
             } catch (error) {
-                // #region agent log
-                fetch(DEBUG_LOG_ENDPOINT,{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        sessionId:'debug-session',
-                        runId:'google-login',
-                        hypothesisId:'google-login-error',
-                        location:'Login.jsx:googleLogin:catch',
-                        message:'Google login failed',
-                        data:{
-                            name:error?.name,
-                            message:error?.message,
-                            code:error?.code,
-                            status:error?.response?.status,
-                            backendMessage:error?.response?.data?.message
-                        },
-                        timestamp:Date.now()
-                    })
-                }).catch(()=>{});
-                // #endregion
-
                 console.error("Google login failed:", error)
 
                 const backendMessage = error?.response?.data?.message

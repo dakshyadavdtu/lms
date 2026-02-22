@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Course from "../models/courseModel.js";
 import razorpay from 'razorpay'
 import User from "../models/userModel.js";
@@ -78,30 +79,37 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: `Payment not completed. Order status: ${orderInfo.status}` });
     }
 
-    // Verify user and course exist before enrollment
-    const user = await User.findById(userId);
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ message: "Invalid userId or courseId" });
+    }
+    const userObjId = new mongoose.Types.ObjectId(userId);
+    const courseObjId = new mongoose.Types.ObjectId(courseId);
+
+    // Verify user and course exist
+    const user = await User.findById(userObjId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseObjId);
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    // Only enroll after successful signature verification
-    if (!user.enrolledCourses.includes(courseId)) {
-      user.enrolledCourses.push(courseId);
-      await user.save();
-    }
+    // Atomic enrollment: $addToSet prevents duplicates (e.g. retry / webhook duplicate)
+    await User.updateOne(
+      { _id: userObjId },
+      { $addToSet: { enrolledCourses: courseObjId } }
+    );
+    await Course.updateOne(
+      { _id: courseObjId },
+      { $addToSet: { enrolledStudents: userObjId } }
+    );
 
-    if (!course.enrolledStudents.includes(userId)) {
-      course.enrolledStudents.push(userId);
-      await course.save();
-    }
-
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Payment verified and enrollment successful",
+      enrolled: true,
+      courseId: courseObjId.toString(),
       orderId: razorpay_order_id,
       paymentId: razorpay_payment_id
     });
