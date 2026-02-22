@@ -43,6 +43,26 @@ Configure `.env` in both folders (database URL, API URL, secrets). Do not commit
 | frontend  | `npm run dev` | Start dev server   |
 | frontend  | `npm run build` | Production build  |
 
+## Pushing to GitHub
+
+1. **Create a new repository** on [GitHub](https://github.com/new). Do not add a README, .gitignore, or license (this repo already has them).
+
+2. **Add the remote and push** (replace `YOUR_USERNAME` and `YOUR_REPO` with your GitHub username and repo name):
+
+   ```bash
+   cd "/Users/dakshyadav/HTML TUTORIAL/LMS"
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+   For SSH:
+
+   ```bash
+   git remote add origin git@github.com:YOUR_USERNAME/YOUR_REPO.git
+   git push -u origin main
+   ```
+
 ## License
 
 ISC
